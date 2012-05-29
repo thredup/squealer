@@ -8,7 +8,16 @@ module Squealer
     include Singleton
 
     def import_from(host, port, name)
-      @import_dbc = Mongo::Connection.new(host, port, :slave_ok => true).db(name)
+      creds, host = host.split("@")
+      if host.nil?
+        host = creds
+        @import_dbc = Mongo::Connection.new(host, port, :slave_ok => true).db(name)
+      else
+        un, pw = creds.split(":")
+        @import_dbc = Mongo::Connection.new(host, port, :slave_ok => true).db(name)
+        @import_dbc.authenticate(un, pw)
+      end
+
       @import_connection = Connection.new(@import_dbc)
     end
 
