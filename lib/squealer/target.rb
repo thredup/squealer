@@ -6,13 +6,17 @@ require 'singleton'
 module Squealer
   class Target
 
+    attr_accessor :pk_name
+
     def self.current
       Queue.instance.current
     end
 
-    def initialize(database_connection, table_name, &block)
+    def initialize(database_connection, table_name, options = {}, &block)
       raise BlockRequired, "Block must be given to target (otherwise, there's no work to do)" unless block_given?
       raise ArgumentError, "Table name must be supplied" if table_name.to_s.strip.empty?
+
+      self.pk_name = options[:pk_name] ||= pk_name_default
 
       @dbc = database_connection
       @table_name = table_name.to_s
@@ -52,6 +56,9 @@ module Squealer
 
     def verify_table_name_in_scope
       table = eval "#{@table_name}", @binding, __FILE__, __LINE__
+
+
+
       raise ArgumentError, "The variable '#{@table_name}' is not a hashmap" unless table.is_a? Hash
       raise ArgumentError, "The hashmap '#{@table_name}' must have an '_id' key" unless table.has_key?('_id') || table.has_key?(:_id)
     rescue NameError
@@ -113,7 +120,7 @@ module Squealer
       raise "Failed to execute statement: #{sql} with #{values.inspect}.\nOriginal Exception was: #{$!.to_s}"
     end
 
-    def pk_name
+    def pk_name_default
       'id'
     end
 
